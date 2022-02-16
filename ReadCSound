@@ -1,0 +1,67 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using System.IO;
+using System;
+using UnityEngine.UI;
+
+
+public class ReadCSound : MonoBehaviour
+{
+    [SerializeField]
+    private GameEvent enemyMoves;
+    private CsoundUnity csoundUnity;
+    private bool isInitialized = false;
+    public int BPM = 60;
+    public AudioClip[] clips;
+    private int On8thNoteChanged = 0;
+
+    void Awake()
+    {
+        //assign CsoundUnity component
+        csoundUnity = GetComponent<CsoundUnity>();
+        if (!csoundUnity)
+            Debug.LogError("Can't find CsoundUnity");
+    }
+
+    IEnumerator Start()
+    {
+        isInitialized = false;
+
+        // wait for csound to be initialized
+        while (!csoundUnity.IsInitialized)
+        {
+            yield return null;
+        }
+
+        var name = "Samples/" + clips[0].name;
+        var samples = CsoundUnity.GetSamples(name, CsoundUnity.SamplesOrigin.Resources);
+        var res = csoundUnity.CreateTable(900, samples);
+        csoundUnity.SetChannel("ButtonSample", 900);
+
+
+        csoundUnity.SetChannel("BPM", BPM);
+        isInitialized = true;
+        Debug.Log("start end!");
+    }
+
+    void Update()
+    {
+        if (!isInitialized || !csoundUnity.IsInitialized) return;
+
+        if (csoundUnity)
+            csoundUnity.SetChannel("BPM", BPM);
+
+        On8thNotes((int)csoundUnity.GetChannel("EnemyMove"));
+
+    }
+
+    private void On8thNotes(int check)
+    {
+            if (check != On8thNoteChanged)
+            {
+                enemyMoves.Raise();
+                On8thNoteChanged = check;
+            }
+    }
+}
